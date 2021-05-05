@@ -1,12 +1,21 @@
 package crypto.com.position;
 
+import crypto.com.position.events.PositionEventsPrettyPrinter;
+
 public class Main {
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws Exception {
         DataSource dataSource = new DataSource();
+
         StockTickSubscriber stockTickSubscriber = new StockTickSubscriber();
-        stockTickSubscriber.registerForTickEvents(new PositionManager(dataSource.init()));
+
+        PositionEventsPrettyPrinter positionEventsPrettyPrinter = new PositionEventsPrettyPrinter();
+        PositionManager positionManager = new PositionManager(dataSource.init());
+        positionManager.registerForPositionEvents(positionEventsPrettyPrinter);
+
+        stockTickSubscriber.registerForTickEvents(positionManager.init());
         stockTickSubscriber.start(88, "aeron:udp?endpoint=localhost:20121", true);
+
         System.out.println("Shutting down...");
     }
 }

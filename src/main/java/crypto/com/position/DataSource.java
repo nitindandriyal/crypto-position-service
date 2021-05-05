@@ -39,10 +39,10 @@ public class DataSource {
             ResultSet rs = statement.executeQuery();
             double[] values = new double[4];
             while (rs.next()) {
-                values[0] = rs.getDouble("strike_price");
-                values[1] = rs.getDouble("maturity_years");
-                values[2] = rs.getDouble("interest_rate");
-                values[3] = rs.getDouble("volatility");
+                values[0] = rs.getDouble("strike_price"); //k
+                values[1] = rs.getDouble("maturity_years"); //t
+                values[2] = rs.getDouble("interest_rate"); //r
+                values[3] = rs.getDouble("volatility"); //v
             }
             securityDefinitions.put(stockName, values);
             return values;

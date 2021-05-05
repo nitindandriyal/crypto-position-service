@@ -41,7 +41,6 @@ public class StockTickSubscriber {
                 for (int i = 0; i < tickEventHandlers.size(); i++) {
                     tickEventHandlers.get(i).onEvent(stockNameBuffer, price);
                 }
-                System.out.println(stockNameBuffer + " > " + price);
             } catch (CharacterCodingException e) {
                 throw new IllegalArgumentException("Could not decode the stock name");
             }
