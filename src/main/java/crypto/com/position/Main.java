@@ -10,13 +10,17 @@ public class Main {
         StockTickSubscriber stockTickSubscriber = new StockTickSubscriber();
 
         PositionEventsPrettyPrinter positionEventsPrettyPrinter = new PositionEventsPrettyPrinter();
+
         PositionManager positionManager = new PositionManager(dataSource.init());
         positionManager.registerForPositionEvents(positionEventsPrettyPrinter);
+        positionManager.init("src/main/resources/positions.csv");
 
-        stockTickSubscriber.registerForTickEvents(positionManager.init());
-        stockTickSubscriber.start(88, "aeron:udp?endpoint=localhost:20121", true);
+        stockTickSubscriber.registerForTickEvents(positionManager);
+        stockTickSubscriber.start(88, "aeron:udp?endpoint=localhost:8888", true);
 
         System.out.println("Shutting down...");
+        stockTickSubscriber.stop();
+        dataSource.close();
     }
 }
 

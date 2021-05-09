@@ -1,4 +1,8 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+    id 'jacoco'
+}
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -15,6 +19,7 @@ dependencies {
     implementation 'junit:junit:4.12'
     implementation 'org.xerial:sqlite-jdbc:3.34.0'
     testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-all:1.10.19'
 }
 
 task srcZip(type: Zip) {
@@ -22,6 +27,7 @@ task srcZip(type: Zip) {
     include 'src/**/*'
     include 'build.gradle'
     include 'README.md'
+    include '*.png'
 }
 
 jar {
@@ -30,6 +36,14 @@ jar {
                 'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
                 'Main-Class': 'crypto.com.task.position.Main'
         )
+    }
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled false
+        csv.enabled false
+        html.destination layout.buildDirectory.dir('jacocoHtml').get().asFile
     }
 }
 

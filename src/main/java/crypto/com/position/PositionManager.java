@@ -7,6 +7,7 @@ import org.agrona.collections.Object2IntHashMap;
 import java.io.File;
 import java.io.IOException;
 import java.nio.CharBuffer;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -14,7 +15,7 @@ public class PositionManager implements TickEventHandler {
 
     private final DataSource dataSource;
 
-    private final CopyOnWriteArrayList<PositionEventHandler> positionEventHandlers = new CopyOnWriteArrayList<>();
+    private final List<PositionEventHandler> positionEventHandlers = new CopyOnWriteArrayList<>();
 
     private final Object2IntHashMap<CharBuffer> positions = new Object2IntHashMap<>(-1);
     private final Object2IntHashMap<CharBuffer> callPositions = new Object2IntHashMap<>(-1);
@@ -24,8 +25,8 @@ public class PositionManager implements TickEventHandler {
         this.dataSource = dataSource;
     }
 
-    public PositionManager init() throws IOException {
-        Scanner fileReader = new Scanner(new File("src/main/resources/positions.csv")).useDelimiter(",|\r?\n|\r");
+    public void init(String path) throws IOException {
+        Scanner fileReader = new Scanner(new File(path)).useDelimiter(",|\r?\n|\r");
         while (fileReader.hasNextLine()) {
             CharBuffer ticker = CharBuffer.wrap(fileReader.next().toCharArray());
             positions.put(ticker, fileReader.nextInt());
@@ -53,8 +54,20 @@ public class PositionManager implements TickEventHandler {
         for (i = 0; i < positionEventHandlers.size(); i++) {
             positionEventHandlers.get(i).snapshot(stocks, stockQts, callQts, putQts);
         }
+    }
 
-        return this;
+    @Override
+    public void onEvent(CharBuffer stock, double price) {
+        double[] params = dataSource.querySecurityDefinitions(stock); // k,t,r,v
+        double d1 = d1(price, params[0], params[1], params[2], params[3]);
+        double d2 = d2(price, params[0], params[1], params[2], params[3], d1);
+
+        double callPrice = callPrice(price, params[0], params[1], params[2], d1, d2);
+        double putPrice = putPrice(price, params[0], params[1], params[2], d1, d2);
+        int numberOfHandlers = positionEventHandlers.size();
+        for (int i = 0; i < numberOfHandlers; i++) {
+            positionEventHandlers.get(i).update(stock, price, callPrice, putPrice);
+        }
     }
 
     public void registerForPositionEvents(PositionEventHandler positionEventHandler) {
@@ -79,23 +92,9 @@ public class PositionManager implements TickEventHandler {
         return d1 - volatility * Math.sqrt(t);
     }
 
-    public static double standardNormalDistribution(double d) {
+    public double standardNormalDistribution(double d) {
         double num = Math.exp(-0.5 * Math.pow(d, 2));
         double den = Math.sqrt(2 * Math.PI);
         return num / den;
-    }
-
-    @Override
-    public void onEvent(CharBuffer stock, double price) {
-        double[] params = dataSource.querySecurityDefinitions(stock); // k,t,r,v
-        double d1 = d1(price, params[0], params[1], params[2], params[3]);
-        double d2 = d2(price, params[0], params[1], params[2], params[3], d1);
-
-        double callPrice = callPrice(price, params[0], params[1], params[2], d1, d2);
-        double putPrice = putPrice(price, params[0], params[1], params[2], d1, d2);
-
-        for (int i = 0; i < positionEventHandlers.size(); i++) {
-            positionEventHandlers.get(i).update(stock, price, callPrice, putPrice);
-        }
     }
 }

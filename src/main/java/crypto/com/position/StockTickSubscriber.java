@@ -21,11 +21,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class StockTickSubscriber {
 
     private final CopyOnWriteArrayList<TickEventHandler> tickEventHandlers = new CopyOnWriteArrayList<>();
+    private MediaDriver driver;
 
     public void start(int streamId, String channel, boolean isEmbedded) {
         System.out.println("Subscribing to " + channel + " on stream id " + streamId);
 
-        final MediaDriver driver = isEmbedded ? MediaDriver.launchEmbedded() : null;
+        driver = isEmbedded ? MediaDriver.launchEmbedded() : null;
         final Aeron.Context ctx = new Aeron.Context();
 
         if (isEmbedded) {
@@ -57,11 +58,14 @@ public class StockTickSubscriber {
                 BusySpinIdleStrategy.INSTANCE.idle(subscription.poll(assembler, 10));
             }
         }
-
-        CloseHelper.close(driver);
     }
 
     public void registerForTickEvents(TickEventHandler tickEventHandler) {
         tickEventHandlers.add(tickEventHandler);
     }
+
+    public void stop() {
+        CloseHelper.close(driver);
+    }
+
 }
